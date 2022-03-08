@@ -3,8 +3,134 @@ import random
 import time
 import matplotlib.pyplot as plt
 
-import numpy as np
 
+
+
+
+def diagonal_elems(A):
+    diag = make_matrix(1,len(A))
+    for i in range(len(A)):
+        diag[0][i] = A[i][i]
+    return diag
+
+def jacobi_eigen(A, eps):
+    
+    
+    def max_offdiag(A):
+        maxd = 0.0
+        for i in range(len(A)-1):
+            for j in range(i+1,len(A)):
+                if abs(A[i][j])>=maxd:
+                    maxd = abs(A[i][j])
+                    k=i
+                    l=j
+        return maxd,k,l
+    
+    def rotate(A,P,k,l):
+
+        diff = A[l][l] - A[k][k]
+        if abs(A[k][l]) < abs(diff)*1.0e-36:
+            t = A[k][l]/diff
+        else:
+            phi = diff/(2.0*A[k][l])
+            t = 1.0/(abs(phi) + math.sqrt(phi**2 + 1.0))
+            if phi < 0.0:
+                t = -t
+        c = 1.0/math.sqrt(t**2 + 1.0)
+        s = t*c
+        #print("s",s)
+        #print("c",c)
+        tau = s/(1.0 + c)
+    
+        store = A[k][l]
+        A[k][l] = 0.0
+        A[k][k] = A[k][k] - t * store
+        A[l][l] = A[l][l] + t * store
+    
+        for i in range(k):
+            store = A[i][k]
+            A[i][k] = store - s * (A[i][l] + tau * store)
+            A[i][l] = A[i][i] + s * (store - tau * A[i][l])
+    
+        for i in range(k+1,l):
+            store = A[k][i]
+            A[k][i] = store - s * (A[i][l] + tau * A[k][i])
+            A[i][l] = A[i][l] - s * (store - tau * A[i][l])
+            
+        for i in range(l+1,len(A)):
+            store = A[k][i]
+            A[k][i] = store - s * (A[l][i] + tau * store)
+            A[l][i] = A[l][i] + s * (store - tau * A[l][i])
+            
+        for i in range(len(A)):
+            store = P[i][k]
+            P[i][k] = store - s * (P[i][l] + tau * P[i][k])
+            P[i][l] = P[i][l] + s * (store - tau * P[i][l])
+            
+    max_rotation = 5*(len(A)**2)
+    P = unit_matrix(len(A))
+    for i in range(max_rotation):
+        maxd, k, l = max_offdiag(A)
+        if maxd < eps:
+            diag = diagonal_elems(A)
+            
+            print("Eigenvalues = ", diagonal_elems(A))
+            print("Eigenvectors =", P)
+            return diag, P
+        rotate(A,P,k,l)
+    print("There is no convergence!")
+    
+
+
+
+
+
+
+
+
+def frob_norm(A):
+    sum = 0
+    for i in range(len(A)):
+        for j in range(len(A[i])):
+            sum = sum + (A[i][j]**2)
+    return math.sqrt(sum)
+
+def power_normalize(A):
+    max = 0
+    for i in range(len(A)):
+        if max <= A[i][0]:
+            max = A[i][0]
+    normA = scaler_matrix_division(max,A)
+    return normA
+
+
+def power_method(A, x0, eps):
+    i = 0
+    lam0 = 1
+    lam1 = 0
+    while abs(lam1-lam0) >= eps:
+        print("error=",abs(lam1-lam0))
+        if i != 0:
+            lam0 = lam1
+        
+        Ax0 = matrix_multiplication(A,x0)
+        AAx0 = matrix_multiplication(A,Ax0)
+        #print("Ax0=",Ax0)
+        #print("AAx0=",AAx0)
+        dotU = inner_product(AAx0,Ax0)
+        dotL = inner_product(Ax0,Ax0)
+        #print("U=",dotU)
+        #print("L=",dotL)
+        lam1 = dotU/dotL
+        
+        x0 = Ax0
+        i = i+1
+        print("i=",i)
+        
+        print("eigenvalue=",lam1)
+        ev = power_normalize(x0)
+        print ("eigenvector=",ev)
+    return lam1, ev
 
 
 
@@ -16,7 +142,7 @@ def conju_norm(A):
         sum = sum + abs(A[i][0])
     return sum
 
-def conju_inner_product(A,B):
+def inner_product(A,B):
 
     AT = transpose(A)
 
@@ -41,15 +167,15 @@ def conjugate_gradient(A, B, x0, eps):
     while conju_norm(rk)>=eps and i in range(len(A)):
         adk = matrix_multiplication(A,dk)
         #print("adk=",adk)
-        rkrk = conju_inner_product(rk, rk)
+        rkrk = inner_product(rk, rk)
         #print("rkrk = ", rkrk)
-        alpha = rkrk/conju_inner_product(dk, adk)
+        alpha = rkrk/inner_product(dk, adk)
         #print("alpha = ",alpha)
         xk = matrix_addition(xk, scaler_matrix_multiplication(alpha, dk))
         #print("xk1=",xk)
         rk = matrix_substraction(rk, scaler_matrix_multiplication(alpha, adk))
         #print("rk1=",rk)
-        beta = conju_inner_product(rk, rk)/rkrk
+        beta = inner_product(rk, rk)/rkrk
         dk = matrix_addition(rk, scaler_matrix_multiplication(beta, dk))
         
         i = i+1
@@ -382,6 +508,12 @@ def scaler_matrix_multiplication(c,A):
     return cA
     
 
+def scaler_matrix_division(c,A):
+    cA = make_matrix(len(A), len(A[0]))
+    for i in range(len(A)):
+        for j in range(len(A[i])):
+            cA[i][j] = A[i][j]/c
+    return cA
 
 
 def matrix_multiplication(A, B):
@@ -394,6 +526,8 @@ def matrix_multiplication(A, B):
                 add = add + multiply
             AB[i][j] = add
     return (AB)
+
+
 
 
 
@@ -441,6 +575,14 @@ def matrix_read(B):
     for i in a:
         A.append([int(j) for j in i.split()])
     return (A)
+
+
+def matrix_copy(A):
+    B = make_matrix(len(A), len(A[0]))
+    for i in range(len(A)):
+        for j in range(len(A[i])):
+            B[i][j] = A[i][j]
+    return B
 
 
 
