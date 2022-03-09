@@ -6,6 +6,108 @@ import matplotlib.pyplot as plt
 
 
 
+import math
+
+def linear_regression(X,Y, sig):
+    
+    a = 0
+    b = 0
+    chi2 = 0
+    S = 0
+    Sx = 0
+    Sy = 0
+    Sxx = 0
+    Sxy = 0
+    err_a = 0
+    err_b = 0
+    sig2_a = 0
+    sig2_b = 0
+    Y1 = [0 for i in range(len(X))]
+    
+    for i in range(len(X)):
+        Y1[i] = a + b * X[i]
+        chi2 = chi2 + ((Y[i] - Y1[i])/sig[i])**2
+        
+        S = S + 1/(sig[i]**2)
+        Sx = Sx + X[i]/(sig[i]**2)
+        Sy = Sy + Y[i]/(sig[i]**2)
+        Sxx = Sxx + (X[i]**2)/(sig[i]**2)
+        Sxy = Sxy + (X[i]*Y[i])/(sig[i]**2)
+        
+        
+        delta = S*Sxx - (Sx**2)
+        a = (Sxx*Sy - Sx*Sxy)/delta
+        b = (S*Sxy - Sx*Sy)/delta
+        
+        covab = -Sx/delta
+        sig2_a = Sxx/delta
+        err_a = math.sqrt(sig2_a)
+        sig2_b = S/delta
+        err_b = math.sqrt(sig2_b)
+    return a,b, covab, err_a, err_b
+
+
+
+
+
+
+def jackknife(A):
+    n = len(A[0])
+    yj_mean = make_matrix(len(A),n) #means of data set
+    yj_mean2 = make_matrix(len(A),n) #squares of means
+    #print("yj_mean=",yj_mean)
+    #print("yj_mean2=",yj_mean2)
+    
+
+    for i in range(len(A)):
+        yj = []
+        yj2 = []
+        
+        for k in range(len(A[0])):
+            sum_y = 0.0
+            for j in range(len(A[0])):
+                if j != k:
+                    sum_y = sum_y + A[i][j]      
+
+            yj.append(sum_y/(n-1))
+            yj2.append((sum_y/(n-1))*(sum_y/(n-1)))
+       
+        yj_mean[i]=yj
+        yj_mean2[i]=yj2
+
+
+    #print("yj_mean=",yj_mean)
+    #print("yj_mean2=",yj_mean2)
+        
+    yjk = make_matrix(len(A),1) #mean of yj_mean
+    yj2_mean = make_matrix(len(A),1) #mean of yj_mean2
+    for i in range(len(A)):
+        
+        sum_y = 0.0
+        sum_y2 = 0.0
+        for j in range(n):
+            sum_y = sum_y + yj_mean[i][j]
+            sum_y2 = sum_y2 + yj_mean2[i][j]
+        yjk[i][0] = (sum_y/n)
+        yj2_mean[i][0] = (sum_y2/n)
+        
+    yjk2 = make_matrix(len(A),1)
+    #print("yjk=",yjk)
+    for i in range(len(yjk)):
+        yjk2[i][0] = (yjk[i][0]*yjk[i][0])
+    #print("yjk2=",yjk2)
+   # print("yj2mean=",yj2_mean)
+    sig_jk2 = matrix_substraction(yj2_mean,yjk2)
+    
+    sig = scaler_matrix_multiplication((n-1),sig_jk2)
+    print("yjk",yjk)
+    #print("sigjk2",sig_jk2)
+    print("sig",sig)
+    return yjk, sig
+
+
+
+
 
 def diagonal_elems(A):
     diag = make_matrix(1,len(A))
@@ -179,8 +281,8 @@ def conjugate_gradient(A, B, x0, eps):
         dk = matrix_addition(rk, scaler_matrix_multiplication(beta, dk))
         
         i = i+1
-        #print("norm=",conju_norm(rk))
-        #print("i=",i)
+        print("norm=",conju_norm(rk))
+        print("i=",i)
     return xk
 
 
