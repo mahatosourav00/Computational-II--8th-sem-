@@ -203,10 +203,12 @@ def frob_norm(A):
     return math.sqrt(sum)
 
 def power_normalize(A):
-    max = 0
+    max = -1000000
+    #print("d", A)
     for i in range(len(A)):
         if max <= A[i][0]:
             max = A[i][0]
+    #print("max", max)
     normA = scaler_matrix_division(max,A)
     return normA
 
@@ -216,7 +218,7 @@ def power_method(A, x0, eps):
     lam0 = 1
     lam1 = 0
     while abs(lam1-lam0) >= eps:
-        print("error=",abs(lam1-lam0))
+        #print("error=",abs(lam1-lam0))
         if i != 0:
             lam0 = lam1
         
@@ -232,11 +234,11 @@ def power_method(A, x0, eps):
         
         x0 = Ax0
         i = i+1
-        print("i=",i)
+        #print("i=",i)
         
-        print("eigenvalue=",lam1)
+        #print("eigenvalue=",lam1)
         ev = power_normalize(x0)
-        print ("eigenvector=",ev)
+        #print ("eigenvector=",ev)
     return lam1, ev
 
 
@@ -260,28 +262,29 @@ def inner_product(A,B):
 
 def conjugate_gradient(A, B, x0, eps):
     #r0 = make_matrix(len(A), 1)
-    xk = x0
+    xk = matrix_copy(x0)
     
     #r0=b-Ax0
     Ax0 = matrix_multiplication(A, x0)
+    print("Ax0",Ax0)
     rk = matrix_substraction(B, Ax0)
-    #print("rk",rk)
+    print("rk",rk)
     i = 0
-    dk = rk
-    #print("dk",dk)
+    dk = matrix_copy(rk)
+    print("dk",dk)
     
     
-    while conju_norm(rk)>=eps and i in range(len(A)):
+    while conju_norm(rk)>=eps:# and i in range(len(A)):
         adk = matrix_multiplication(A,dk)
-        #print("adk=",adk)
+        print("adk=",adk)
         rkrk = inner_product(rk, rk)
-        #print("rkrk = ", rkrk)
+        print("rkrk = ", rkrk)
         alpha = rkrk/inner_product(dk, adk)
-        #print("alpha = ",alpha)
+        print("alpha = ",alpha)
         xk = matrix_addition(xk, scaler_matrix_multiplication(alpha, dk))
-        #print("xk1=",xk)
+        print("xk1=",xk)
         rk = matrix_substraction(rk, scaler_matrix_multiplication(alpha, adk))
-        #print("rk1=",rk)
+        print("rk1=",rk)
         beta = inner_product(rk, rk)/rkrk
         dk = matrix_addition(rk, scaler_matrix_multiplication(beta, dk))
         
@@ -330,7 +333,7 @@ def conjugate_gradient(A, B, x0, eps):
 
 '''
 
-def gauss_seidel(A, B, eps):
+def gauss_seidel(A, B, xk0, eps):
     
     # Check: A should have zero on diagonals
     for i in range(len(A)):
@@ -338,13 +341,14 @@ def gauss_seidel(A, B, eps):
             return ("Main diagnal should not have zero!")
 
         
-    xk0 = make_matrix(len(A),1)
+    #xk0 = make_matrix(len(A),1)
     xk1 = make_matrix(len(A),1)
+    '''
     print("Guess the x matrix of length",len(A))
     for i in range(len(xk0)):
         for j in range(len(xk0[i])):
             xk0[i][j]=float(input("element:"))
-            
+    ''' 
     print("xk1",xk1)
     c=0
     while inf_norm(xk1,xk0) >= eps:
@@ -388,8 +392,8 @@ def inf_norm(X,Y):
     return max
         
 
-def jacobi(A, B, eps):
-    
+def jacobi(A, B, xk0, eps):
+    '''
     # Check: A should have zero on diagonals
     sumdiag = 0
     sumother = 0
@@ -404,15 +408,16 @@ def jacobi(A, B, eps):
     print("sumother",sumother)
     if sumdiag<=sumother:
         return ("Sum of diagonal must be dominant!")
-        
-    xk0 = make_matrix(len(A),1)
+    '''    
+    #xk0 = make_matrix(len(A),1)
     xk1 = make_matrix(len(A),1)
-    print("Guess the x matrix of length",len(A))
+    '''
+    print("\nGuess the x matrix of length",len(A))
     for i in range(len(xk0)):
         for j in range(len(xk0[i])):
-            xk0[i][j]=float(input("element:"))
+            xk0[i][j]=float(input("input element:"))
             
-
+    '''
     c=0
     while inf_norm(xk1,xk0) >= eps:
         
@@ -427,7 +432,7 @@ def jacobi(A, B, eps):
                     sum = sum + (A[i][j]*xk0[j][0])
             xk1[i][0] = (1/A[i][i])*(B[i][0]-sum)
         c=c+1
-    print("c=",c)
+    #print("c=",c)
         
     return xk1
             
@@ -589,8 +594,8 @@ def backward_substituition(U, Y):
 
 def transpose(A):
     #if a 1D array, convert to a 2D array = matrix
-    #if not isinstance(A[0],list):
-       # A = [A]
+    if not isinstance(A[0],list):
+        A = [A]
  
     #Get dimensions
     r = len(A)
@@ -680,7 +685,7 @@ def matrix_read(B):
     A = []
     #A matrix
     for i in a:
-        A.append([int(j) for j in i.split()])
+        A.append([float(j) for j in i.split()])
     return (A)
 
 
